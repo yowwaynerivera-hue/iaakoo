@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>owpii</title>
+
+<style>
+body{
+    margin:0;
+    overflow:hidden;
+    background:black;
+    font-family:Arial, sans-serif;
+}
+
+canvas{
+    position:fixed;
+    top:0;
+    left:0;
+    z-index:0;
+}
+
+#message{
+    position:fixed;
+    top:30%;
+    width:100%;
+    text-align:center;
+    font-size:45px;
+    color:white;
+    opacity:0;
+    transition:1s;
+    z-index:2;
+}
+
+#launchBtn{
+    position:fixed;
+    bottom:60px;
+    left:50%;
+    transform:translateX(-50%);
+    padding:15px 35px;
+    font-size:20px;
+    border:none;
+    border-radius:30px;
+    background:linear-gradient(45deg,#ff4b7d,#ff8fa3);
+    color:white;
+    cursor:pointer;
+    box-shadow:0 0 20px hotpink;
+    z-index:2;
+}
+#launchBtn:hover{
+    transform:translateX(-50%) scale(1.1);
+}
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<h1 id="message">I Love You </h1>
+<button id="launchBtn">Click heree babyy</button>
+
+<audio id="unlockBoom" src="firework.mp3" preload="auto"></audio>
+
+<audio id="bgMusic" src="music.mp3" loop></audio>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+let rockets=[];
+let particles=[];
+let stars=[];
+let audioUnlocked=false;
+
+let messages=[
+"I miss you, owpii ",
+"I love you soo much",
+"My everything, in everything",
+"ik u like fireworks so much "
+];
+
+
+//  Stars
+for(let i=0;i<200;i++){
+    stars.push({
+        x:Math.random()*canvas.width,
+        y:Math.random()*canvas.height,
+        size:Math.random()*2,
+        alpha:Math.random(),
+        speed:Math.random()*0.02
+    });
+}
+
+function drawStars(){
+    stars.forEach(star=>{
+        star.alpha+=star.speed;
+        if(star.alpha<=0||star.alpha>=1){
+            star.speed*=-1;
+        }
+        ctx.globalAlpha=star.alpha;
+        ctx.fillStyle="white";
+        ctx.beginPath();
+        ctx.arc(star.x,star.y,star.size,0,Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha=1;
+    });
+}
+
+// 🚀 Rocket
+class Rocket{
+    constructor(){
+        this.x=Math.random()*canvas.width;
+        this.y=canvas.height;
+        this.speed=2;
+        this.targetY=canvas.height/2-Math.random()*150;
+        this.exploded=false;
+    }
+
+    update(){
+        this.y-=this.speed;
+        if(this.y<=this.targetY&&!this.exploded){
+            this.explode();
+            this.exploded=true;
+        }
+    }
+
+    draw(){
+        ctx.fillStyle="white";
+        ctx.fillRect(this.x,this.y,3,12);
+    }
+
+    explode(){
+        playBoom();
+
+        const colors=["#ff4b7d","#ffcc00","#00eaff","#a64dff","#00ff88","#ff6ec7"];
+        for(let i=0;i<150;i++){
+            particles.push(new Particle(this.x,this.y,colors[Math.floor(Math.random()*colors.length)]));
+        }
+    }
+}
+
+//  Particles
+class Particle{
+    constructor(x,y,color){
+        this.x=x;
+        this.y=y;
+        this.color=color;
+        this.angle=Math.random()*Math.PI*2;
+        this.speed=Math.random()*4+1;
+        this.alpha=1;
+        this.gravity=0.03;
+    }
+
+    update(){
+        this.speed*=0.98;
+        this.x+=Math.cos(this.angle)*this.speed;
+        this.y+=Math.sin(this.angle)*this.speed+this.gravity;
+        this.alpha-=0.01;
+    }
+
+    draw(){
+        ctx.globalAlpha=this.alpha;
+        ctx.fillStyle=this.color;
+        ctx.beginPath();
+        ctx.arc(this.x,this.y,3,0,Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha=1;
+    }
+}
+
+function animate(){
+    ctx.fillStyle="rgba(0,0,0,0.3)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    drawStars();
+
+    rockets.forEach((r,i)=>{
+        r.update();
+        r.draw();
+        if(r.exploded){
+            rockets.splice(i,1);
+        }
+    });
+
+    particles.forEach((p,i)=>{
+        p.update();
+        p.draw();
+        if(p.alpha<=0){
+            particles.splice(i,1);
+        }
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+
+
+//  Explosion Sound (layered)
+function playBoom(){
+    if(!audioUnlocked) return;
+
+    const boom = new Audio("firework.mp3");
+    boom.volume = 0.6;
+    boom.play().catch(()=>{});
+}
+
+
+//  Button
+document.getElementById("launchBtn").addEventListener("click",()=>{
+
+    // Unlock audio first time (important for phones)
+    if(!audioUnlocked){
+        const unlock=document.getElementById("unlockBoom");
+        unlock.play().then(()=>{
+            unlock.pause();
+            unlock.currentTime=0;
+            audioUnlocked=true;
+        }).catch(()=>{
+            audioUnlocked=true;
+        });
+
+        // Start background music
+        const bg=document.getElementById("bgMusic");
+        bg.volume=0.9;
+        bg.play().catch(()=>{});
+    }
+
+    rockets.push(new Rocket());
+
+    let msg=document.getElementById("message");
+    msg.innerText=messages[Math.floor(Math.random()*messages.length)];
+    msg.style.opacity=1;
+});
+</script>
+
+</body>
+</html>
