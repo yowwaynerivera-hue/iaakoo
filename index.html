@@ -101,7 +101,7 @@ function drawStars(){
     stars.forEach(star=>{
         star.alpha+=star.speed;
         if(star.alpha<=0||star.alpha>=1){
-            star.speed*=-1;
+            star.speed*=-5;
         }
         ctx.globalAlpha=star.alpha;
         ctx.fillStyle="white";
